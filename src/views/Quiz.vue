@@ -95,7 +95,7 @@ onMounted(async () => {
           </el-col>
           <el-col :xs="24" :md="8">
             <el-form-item label="题数">
-              <el-input-number v-model="limit" :min="1" :max="100" />
+              <el-input-number v-model="limit" :min="1" :max="500" />
             </el-form-item>
           </el-col>
         </el-row>
