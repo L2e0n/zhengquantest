@@ -123,6 +123,14 @@ function startSection(sec: SectionDetail, type?: 'single' | 'multiple' | 'true_f
 
   if (type) {
     query.type = type
+    // 按题型练习时，使用该题型的总数作为 limit
+    const count = type === 'single' ? sec.singleCount :
+                  type === 'multiple' ? sec.multipleCount :
+                  sec.trueFalseCount
+    query.limit = count
+  } else {
+    // 全部练习时，使用该节的总题数
+    query.limit = sec.totalCount
   }
 
   router.push({ path: '/quiz', query })
