@@ -25,21 +25,12 @@ export const router = createRouter({
         { path: 'chapter-practice', name: 'chapter-practice', component: ChapterPractice },
         { path: 'exam-practice', name: 'exam-practice', component: ExamPractice },
         { path: 'mock-exam', name: 'mock-exam', component: MockExam },
-        { path: 'questions', name: 'questions', component: QuestionBank, meta: { requiresAdmin: true } },
+        { path: 'questions', name: 'questions', component: QuestionBank },
         { path: 'quiz', name: 'quiz', component: Quiz },
         { path: 'wrong', name: 'wrong', component: WrongBook },
-        { path: 'import', name: 'import', component: ImportQuestions, meta: { requiresAdmin: true } },
-        { path: 'settings', name: 'settings', component: Settings, meta: { requiresAdmin: true } },
+        { path: 'import', name: 'import', component: ImportQuestions },
+        { path: 'settings', name: 'settings', component: Settings },
       ],
     },
   ],
-})
-
-router.beforeEach((to) => {
-  if (to.meta.requiresAdmin) {
-    const isAuthed = sessionStorage.getItem('admin_auth') === 'true'
-    if (!isAuthed) {
-      return { name: 'dashboard', query: { adminAuth: to.path } }
-    }
-  }
 })
