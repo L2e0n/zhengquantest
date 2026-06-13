@@ -9,7 +9,7 @@ const props = defineProps<{
 const password = ref('')
 const loading = ref(false)
 
-const ADMIN_PASSWORD = 'admin2026'
+const ADMIN_PASSWORD = '123!Wheelsup*'
 
 function handleSubmit() {
   if (!password.value) {

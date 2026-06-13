@@ -36,8 +36,8 @@ function handleAuthSuccess() {
 
     <div class="page-title">
       <div>
-        <h1>证券从业资格题库</h1>
-        <p>选择科目开始刷题，答错的题目会自动进入错题本。</p>
+        <h1>证券从业资格在线题库</h1>
+        <p>可按科目刷题，答错会自动进入错题本。</p>
       </div>
     </div>
 
