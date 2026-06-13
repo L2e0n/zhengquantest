@@ -23,7 +23,7 @@ export async function searchQuestions(filters: QuestionFilters = {}) {
   let questions = await db.questions.toArray()
 
   if (filters.section) questions = questions.filter((question) => question.section === filters.section)
-  if (filters.chapter) questions = questions.filter((question) => question.chapter?.includes(filters.chapter))
+  if (filters.chapter) questions = questions.filter((question) => question.chapter?.includes(filters.chapter || ''))
   if (filters.type) questions = questions.filter((question) => question.type === filters.type)
   if (filters.year) questions = questions.filter((question) => question.chapter?.includes(`${filters.year}年`))
 

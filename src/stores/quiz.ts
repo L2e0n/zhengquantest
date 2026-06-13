@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { db } from '../db'
-import type { ExamSection, Question, QuizMode, QuizSession } from '../types/question'
+import type { ExamSection, Question, QuestionFilters, QuizMode, QuizSession } from '../types/question'
 import { pickQuestions } from '../services/questionService'
 import { recordAnswer } from '../services/progressService'
 import { sameAnswer } from '../utils/normalize'
@@ -20,11 +20,11 @@ export const useQuizStore = defineStore('quiz', () => {
   const finished = computed(() => Boolean(session.value?.finishedAt))
 
   async function startQuiz(params: { mode: QuizMode; section?: ExamSection; chapter?: string; year?: number; type?: string; limit?: number }) {
-    const filters = {
+    const filters: QuestionFilters = {
       section: params.section,
       chapter: params.chapter,
       year: params.year,
-      type: params.type,
+      type: (params.type as any) || '',
       wrongOnly: params.mode === 'wrong',
       favoriteOnly: params.mode === 'favorite',
     }

@@ -38,7 +38,7 @@ onMounted(async () => {
   loading.value = false
 })
 
-function startPaper(paperName: string) {
+function startPaper() {
   router.push({
     path: '/quiz',
     query: {
@@ -76,7 +76,7 @@ function startPaper(paperName: string) {
         :key="paper.name"
         shadow="hover"
         class="paper-card"
-        @click="startPaper(paper.name)"
+        @click="startPaper()"
       >
         <div class="paper-icon">📄</div>
         <h3 class="paper-name">{{ paper.name }}</h3>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { db } from '../db'
 import type { ExamSection, Question } from '../types/question'
@@ -61,7 +61,6 @@ onMounted(async () => {
 
     const parts = q.chapter.split('/')
     const mainChapter = parts[0] // "第一章 金融市场体系"
-    const subSection = parts[1] || parts[0] // "第一节 金融市场概述"
 
     if (!chapterMap.has(mainChapter)) {
       chapterMap.set(mainChapter, new Map())
@@ -115,10 +114,10 @@ onMounted(async () => {
   loading.value = false
 })
 
-function startSection(section: SectionDetail, type?: 'single' | 'multiple' | 'true_false') {
+function startSection(sec: SectionDetail, type?: 'single' | 'multiple' | 'true_false') {
   const query: any = {
     section: section.value,
-    chapter: section.fullPath,
+    chapter: sec.fullPath,
     mode: 'chapter'
   }
 
