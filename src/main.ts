@@ -6,5 +6,21 @@ import 'element-plus/dist/index.css'
 import './styles/index.scss'
 import App from './App.vue'
 import { router } from './router'
+import { initializeQuestions } from './services/initQuestions'
 
-createApp(App).use(createPinia()).use(router).use(ElementPlus, { locale: zhCn }).mount('#app')
+const app = createApp(App)
+
+app.use(createPinia())
+app.use(router)
+app.use(ElementPlus, { locale: zhCn })
+
+// 应用启动时自动初始化题库
+initializeQuestions().then(result => {
+  if (result.success) {
+    console.log(`📚 题库就绪：${result.count} 道题目`)
+  } else {
+    console.warn('⚠️ 题库加载失败:', result.message)
+  }
+})
+
+app.mount('#app')
