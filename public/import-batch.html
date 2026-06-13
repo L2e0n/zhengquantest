@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>题库JSON批量导入</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .file-input {
+      display: none;
+    }
+    .upload-btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #409eff;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .upload-btn:hover {
+      background: #66b1ff;
+    }
+    .preview {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 4px;
+      display: none;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .stat-item {
+      text-align: center;
+      padding: 15px;
+      background: white;
+      border-radius: 4px;
+      border: 1px solid #eee;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #409eff;
+    }
+    .stat-label {
+      color: #666;
+      margin-top: 5px;
+    }
+    .import-btn {
+      width: 100%;
+      padding: 15px;
+      background: #67c23a;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .import-btn:hover {
+      background: #85ce61;
+    }
+    .import-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+      display: none;
+    }
+    .result.success {
+      background: #f0f9ff;
+      border: 1px solid #67c23a;
+      color: #67c23a;
+    }
+    .result.error {
+      background: #fef0f0;
+      border: 1px solid #f56c6c;
+      color: #f56c6c;
+    }
+    .progress {
+      margin-top: 20px;
+      display: none;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #eee;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #409eff;
+      transition: width 0.3s;
+    }
+    .progress-text {
+      text-align: center;
+      margin-top: 10px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>📚 证券考试题库导入</h1>
+    <p class="subtitle">选择解析好的JSON文件进行批量导入</p>
+
+    <label for="fileInput" class="upload-btn">
+      📁 选择JSON文件
+    </label>
+    <input type="file" id="fileInput" class="file-input" accept=".json">
+
+    <div id="preview" class="preview">
+      <h3>📊 导入预览</h3>
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value" id="totalCount">0</div>
+          <div class="stat-label">总题数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="singleCount">0</div>
+          <div class="stat-label">单选题</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="multipleCount">0</div>
+          <div class="stat-label">多选题</div>
+        </div>
+      </div>
+
+      <button id="importBtn" class="import-btn">
+        ✨ 开始导入
+      </button>
+
+      <div id="progress" class="progress">
+        <div class="progress-bar">
+          <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+        </div>
+        <div class="progress-text" id="progressText">准备导入...</div>
+      </div>
+
+      <div id="result" class="result"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import Dexie from 'https://cdn.jsdelivr.net/npm/dexie@4.0.1/+esm'
+    import { nanoid } from 'https://cdn.jsdelivr.net/npm/nanoid@5.0.7/+esm'
+
+    // 初始化数据库
+    const db = new Dexie('zhengquantest')
+    db.version(1).stores({
+      questions: 'id, section, chapter, topic, type, year, contentHash, *tags',
+      progress: 'questionId, favorite, mastered, wrongAttempts, lastWrongAt, lastAnsweredAt',
+      answerRecords: 'id, questionId, correct, mode, answeredAt',
+      quizSessions: 'id, mode, section, startedAt, finishedAt',
+      importBatches: 'id, importedAt',
+    })
+
+    let parsedQuestions = []
+
+    // 文件选择
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+
+      try {
+        const text = await file.text()
+        parsedQuestions = JSON.parse(text)
+
+        // 显示预览
+        document.getElementById('preview').style.display = 'block'
+        document.getElementById('totalCount').textContent = parsedQuestions.length
+        document.getElementById('singleCount').textContent =
+          parsedQuestions.filter(q => q.type === 'single').length
+        document.getElementById('multipleCount').textContent =
+          parsedQuestions.filter(q => q.type === 'multiple').length
+
+        document.getElementById('importBtn').disabled = false
+      } catch (err) {
+        alert('JSON文件格式错误: ' + err.message)
+      }
+    })
+
+    // 导入按钮
+    document.getElementById('importBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('importBtn')
+      const progress = document.getElementById('progress')
+      const progressFill = document.getElementById('progressFill')
+      const progressText = document.getElementById('progressText')
+      const result = document.getElementById('result')
+
+      btn.disabled = true
+      progress.style.display = 'block'
+      result.style.display = 'none'
+
+      try {
+        let addedCount = 0
+        let updatedCount = 0
+        let skippedCount = 0
+
+        const total = parsedQuestions.length
+        const now = Date.now()
+
+        for (let i = 0; i < parsedQuestions.length; i++) {
+          const raw = parsedQuestions[i]
+
+          // 检查是否已存在（根据contentHash）
+          const existing = await db.questions
+            .where('contentHash')
+            .equals(raw.contentHash)
+            .first()
+
+          const question = {
+            id: existing?.id || nanoid(),
+            section: raw.section,
+            chapter: raw.chapter || '',
+            topic: raw.topic || '',
+            type: raw.type,
+            stem: raw.stem,
+            options: raw.options,
+            answer: raw.answer,
+            explanation: raw.explanation || '',
+            difficulty: raw.difficulty,
+            year: raw.year,
+            source: raw.source || '',
+            sourceUrl: raw.sourceUrl || '',
+            tags: raw.tags || [],
+            contentHash: raw.contentHash,
+            createdAt: existing?.createdAt || now,
+            updatedAt: now
+          }
+
+          if (existing) {
+            // 更新
+            await db.questions.put(question)
+            updatedCount++
+          } else {
+            // 新增
+            await db.questions.add(question)
+            addedCount++
+
+            // 初始化进度记录
+            await db.progress.put({
+              questionId: question.id,
+              totalAttempts: 0,
+              correctAttempts: 0,
+              wrongAttempts: 0,
+              mastered: false,
+              favorite: false
+            })
+          }
+
+          // 更新进度
+          const percent = Math.round(((i + 1) / total) * 100)
+          progressFill.style.width = percent + '%'
+          progressText.textContent = `导入中... ${i + 1}/${total} (${percent}%)`
+        }
+
+        // 保存导入批次
+        await db.importBatches.add({
+          id: nanoid(),
+          fileName: document.getElementById('fileInput').files[0].name,
+          source: 'PDF解析',
+          importedAt: now,
+          addedCount,
+          updatedCount,
+          skippedCount: 0,
+          invalidCount: 0
+        })
+
+        // 显示成功
+        result.className = 'result success'
+        result.style.display = 'block'
+        result.innerHTML = `
+          ✅ 导入成功！<br>
+          新增: ${addedCount} 题<br>
+          更新: ${updatedCount} 题
+        `
+
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 2000)
+
+      } catch (err) {
+        result.className = 'result error'
+        result.style.display = 'block'
+        result.textContent = '❌ 导入失败: ' + err.message
+        btn.disabled = false
+      }
+    })
+  </script>
+</body>
+</html>
