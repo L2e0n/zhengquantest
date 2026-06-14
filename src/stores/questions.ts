@@ -50,6 +50,19 @@ export const useQuestionsStore = defineStore('questions', () => {
     await refresh()
   }
 
+  async function forceRefresh() {
+    // 清空题库，重新从服务器下载
+    const { db } = await import('../db')
+    await db.questions.clear()
+
+    // 重新导入
+    const { initializeQuestions } = await import('../services/initQuestions')
+    await initializeQuestions()
+
+    // 刷新
+    await refresh()
+  }
+
   return {
     filters,
     questions,
@@ -64,5 +77,6 @@ export const useQuestionsStore = defineStore('questions', () => {
     previewFile,
     confirmImport,
     toggleQuestionFavorite,
+    forceRefresh,
   }
 })

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { clearAllData, clearProgressOnly, downloadJson, exportBackup, importBackup } from '../services/questionService'
+import { useQuestionsStore } from '../stores/questions'
+
+const questionsStore = useQuestionsStore()
 
 async function exportData() {
   const backup = await exportBackup()
@@ -25,6 +28,27 @@ async function confirmClearProgress() {
   await clearProgressOnly()
   ElMessage.success('已清空做题进度')
 }
+
+async function refreshQuestions() {
+  try {
+    await ElMessageBox.confirm(
+      '这会重新从服务器下载最新题库（保留你的做题记录），适用于题库更新后需要刷新的情况。',
+      '刷新题库',
+      { type: 'info', confirmButtonText: '确认刷新' }
+    )
+
+    const loading = ElMessage.info({ message: '正在刷新题库...', duration: 0 })
+    await questionsStore.forceRefresh()
+    loading.close()
+
+    ElMessage.success('题库已刷新，请刷新页面查看最新内容')
+    setTimeout(() => {
+      window.location.reload()
+    }, 1500)
+  } catch {
+    // 用户取消
+  }
+}
 </script>
 
 <template>
@@ -37,6 +61,16 @@ async function confirmClearProgress() {
     </div>
 
     <el-card shadow="never">
+      <template #header><strong>题库管理</strong></template>
+      <el-space wrap>
+        <el-button type="success" @click="refreshQuestions">🔄 刷新题库</el-button>
+      </el-space>
+      <p style="margin-top: 12px; color: #909399; font-size: 14px;">
+        题库更新后，点击此按钮重新下载最新题库（保留做题记录）
+      </p>
+    </el-card>
+
+    <el-card shadow="never" class="section-card">
       <template #header><strong>数据备份</strong></template>
       <el-space wrap>
         <el-button type="primary" @click="exportData">导出全部数据</el-button>
